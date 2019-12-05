@@ -1,0 +1,298 @@
+//include LCD library
+//include servo motor library
+#include<Servo.h>
+#include <Wire.h> 
+#include <LiquidCrystal_I2C.h>
+#include <SoftwareSerial.h>
+/*
+Author: christianpaullim@gmail.com
+Date: 10/26/2017
+Description: This code instructs servo on when it should move and when it shiuld stop. It has a countdown feature that displays its value to the LCD.
+*/
+int buttonState = 0;//initial state of manual feeding button
+
+SoftwareSerial mySerial(3, 2); //A6 Tx & Rx is connected to Arduino #3 & #2
+LiquidCrystal_I2C lcd(0x27,16,2); // set the LCD address to 0x27 for a 16 chars and 2 line display
+int laserTransmitter = 6;//set pin D6 of Arduino for laser transmitter
+int buzzerPin = 5;//set pin D5 of Arduino for buzzer
+int manualPin = 4;//set pin D2 of Arduino for manual feeding button
+int servoPin = A1;// set pin A1 of Arduino for the servo motor input
+int laserSensor = A0; //set pin A0 of Arduino for laser Sensor
+
+Servo Servo1;//call servo as Servo1
+int S = 5; // count seconds 
+int M = 00; // count minutes
+int H = 00; // count hours
+
+void setup()
+
+{  
+  tone(buzzerPin, 2000, 100);
+
+   Serial.begin(9600);
+  mySerial.begin(9600);
+  Serial.println("Initializing..."); 
+  pinMode(laserSensor,INPUT); // for laser sensor
+  pinMode(laserTransmitter,INPUT); // for laser to
+  pinMode(manualPin, INPUT_PULLUP);//set manualPin as input with built in pull up resistor
+  pinMode(servoPin, OUTPUT);//set servoPin as output
+  
+  lcd.init(); //initialize the lcd
+  lcd.backlight(); //open the backlight 
+  
+  Servo1.attach(servoPin);//attach Servo1 to the servoPin cmd
+  Servo1.write(0);//turn servo motor at standby position at full power
+  delay(3000);
+  
+  lcd.begin(16,2);//initiate LCD panel
+  lcd.setCursor(0,0);//select first line of LCD
+  lcd.print(" Automatic  Pet ");//print script
+  lcd.setCursor(0,1);//select second line of LCD
+  lcd.print("     Feeder     ");//print script
+  delay(2000);//print scripts for 2 seconds
+  
+  lcd.clear();//clear LCD display
+  lcd.setCursor(0,1);
+  lcd.print("  System Ready  ");
+  delay(2000);
+  
+  lcd.clear();
+  tone(buzzerPin, 3000, 50);
+   digitalWrite(laserTransmitter,LOW);
+  delay(300);
+ 
+}
+
+void loop()
+  
+{  
+  //set countdown counter
+  lcd.setCursor(0,0);
+  lcd.print("Feeding time in:");
+  lcd.setCursor(6,1);
+  lcd.print(":");
+  lcd.setCursor(9,1);
+  lcd.print(":");
+  
+ S--;//countdown S
+ delay(1000);//count per second
+  
+ if(S<0) // everytime the time seconds become 0, the minute gets deducted by 1.
+ {
+ M--;
+ S=59; //the seconds go back to 59
+ }
+ if(M<0) // everytime the time minutes become 0, the hours get deducted by 1.
+ {
+ H--;
+ M=59; // the minutes go back to 59
+ }
+ if(H<0) // when the time runs out, the timer will go back to start 
+ {
+ H=0;
+ M=0; //depends on you
+ S=10;
+ }
+ if(M>9)
+ {
+ lcd.setCursor(7,1);
+ lcd.print(M);
+ }
+ else
+ {
+ lcd.setCursor(7,1);
+ lcd.print("0"); 
+ lcd.setCursor(8,1);
+ lcd.print(M);
+ lcd.setCursor(9,1);
+ lcd.print(":");
+ }
+  
+ if(S>9)
+ {
+ lcd.setCursor(10,1);
+ lcd.print(S);
+ }
+ else
+ {
+ lcd.setCursor(10,1);
+ lcd.print("0"); 
+ lcd.setCursor(11,1);
+ lcd.print(S);
+ lcd.setCursor(12,1);
+ lcd.print(" ");
+ }
+  
+ if(H>9)
+ {
+ lcd.setCursor(4,1);
+ lcd.print (H);
+ }
+ else
+ {
+ lcd.setCursor(4,1);
+ lcd.print("0"); 
+ lcd.setCursor(5,1);
+ lcd.print(H);
+ lcd.setCursor(6,1);
+ lcd.print(":");
+ }
+  Serial.println("SEC"); 
+  
+  
+ if ((H==0)&&(M==0)&&(S==0))//if countdown comes to 0,
+ {
+  Serial.println("FEEDTIME"); 
+ tone(buzzerPin, 3000, 3000);
+ lcd.setCursor(0,0);
+ lcd.print("      I'ts      ");
+ lcd.setCursor(0,1);
+ lcd.print("Feeding  Time!!!");
+ Servo1.write(90);//turn servo 90 deg to dispense food
+ delay(1000);
+     digitalWrite(laserTransmitter,HIGH);
+    int laserchecker = 0;
+
+    int laserSensor = analogRead(A0); //laserSensor gets value of photoresistor
+	Serial.println(laserSensor); 
+    if(laserSensor > 450){
+	laserchecker++;
+}
+delay(200);
+    int laserSensor = analogRead(A0); //laserSensor gets value of photoresistor
+	Serial.println(laserSensor); 
+    if(laserSensor > 450){
+	laserchecker++;
+}
+delay(200);
+
+    int laserSensor = analogRead(A0); //laserSensor gets value of photoresistor
+	Serial.println(laserSensor); 
+    if(laserSensor > 450){
+	laserchecker++;
+}
+delay(200);
+
+    int laserSensor = analogRead(A0); //laserSensor gets value of photoresistor
+	Serial.println(laserSensor); 
+    if(laserSensor > 450){
+	laserchecker++;
+}
+delay(200);
+
+    int laserSensor = analogRead(A0); //laserSensor gets value of photoresistor
+	Serial.println(laserSensor); 
+    if(laserSensor > 450){
+	laserchecker++;
+}
+delay(200);
+    if(laserSensor = 0){
+        tone(buzzerPin, 3000, 5000);
+        digitalWrite(13,LOW);
+      mySerial.println("AT"); //Once the handshake test is successful, it will back to OK
+      updateSerial();
+    
+      mySerial.println("AT+CMGF=1"); // Configuring TEXT mode
+      updateSerial();
+      mySerial.println("AT+CMGS=\"+639750985711\"");//change ZZ with country code and xxxxxxxxxxx with phone number to sms
+      updateSerial();
+      mySerial.print("Pet Feeder Container is Empty!"); //text content
+      updateSerial();
+      mySerial.write(26);
+      delay(5000);
+      Serial.println("Send nudes"); 
+    }
+
+     digitalWrite(laserTransmitter,LOW);
+ delay(1000);
+ Servo1.write(0);//turn servo to 0 deg to stop dispensing of food
+ lcd.clear();
+ }
+/*
+Author: lastminuteengineers
+Date: N.D.
+Description: This code gives a command to the GSM module. Through AT commands, the GSM module will be able to send the set message to the set phone number.
+*/
+ buttonState = digitalRead(manualPin);//override / manual trigger
+ if (buttonState == LOW)
+ {
+ tone(buzzerPin, 3000, 2000);
+ lcd.setCursor(0,0);
+ lcd.print("    OVERRIDE    ");
+ lcd.setCursor(0,1);
+ lcd.print("(manual feeding)");
+ Servo1.write(90);//turn servo 90 deg to dispense food
+ delay(1000);
+    laserTransmitter = HIGH;
+	int laserchecker = 0;
+    int laserSensor = analogRead(A0); //laserSensor gets value of photoresistor
+	Serial.println(laserSensor); 
+    if(laserSensor > 450){
+	laserchecker++;
+}
+delay(200);
+    int laserSensor = analogRead(A0); //laserSensor gets value of photoresistor
+	Serial.println(laserSensor); 
+    if(laserSensor > 450){
+	laserchecker++;
+}
+delay(200);
+
+    int laserSensor = analogRead(A0); //laserSensor gets value of photoresistor
+	Serial.println(laserSensor); 
+    if(laserSensor > 450){
+	laserchecker++;
+}
+delay(200);
+
+    int laserSensor = analogRead(A0); //laserSensor gets value of photoresistor
+	Serial.println(laserSensor); 
+    if(laserSensor > 450){
+	laserchecker++;
+}
+delay(200);
+
+    int laserSensor = analogRead(A0); //laserSensor gets value of photoresistor
+	Serial.println(laserSensor); 
+    if(laserSensor > 450){
+	laserchecker++;
+}
+delay(200);
+    if(laserSensor = 0){
+
+        tone(buzzerPin, 3000, 5000);
+        digitalWrite(13,LOW);
+      mySerial.println("AT"); //Once the handshake test is successful, it will back to OK
+      updateSerial();
+    
+      mySerial.println("AT+CMGF=1"); // Configuring TEXT mode
+      updateSerial();
+      mySerial.println("AT+CMGS=\"+639750985711\"");//change ZZ with country code and xxxxxxxxxxx with phone number to sms
+      updateSerial();
+      mySerial.print("Pet Feeder Container is Empty!"); //text content
+      updateSerial();
+      mySerial.write(26);
+      delay(5000);
+      Serial.println("Send nudes"); 
+    }
+    laserTransmitter = LOW;
+ delay(1000);
+ Servo1.write(0);//turn servo to 0 deg to stop dispensing of food
+ lcd.clear();
+   
+ }
+ 
+}
+
+void updateSerial()
+{
+  delay(500);
+  while (Serial.available()) 
+  {
+    mySerial.write(Serial.read());//Forward what Serial received to Software Serial Port
+  }
+  while(mySerial.available()) 
+  {
+    Serial.write(mySerial.read());//Forward what Software Serial received to Serial Port
+  }
+}
